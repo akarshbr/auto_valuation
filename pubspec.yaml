@@ -1,0 +1,29 @@
+name: audio_valuation
+description: On-device speech-to-text for Flutter. whisper.cpp through dart:ffi, with decoding and inference on a worker isolate.
+version: 3.0.0
+publish_to: none
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  ffi: ^2.1.0
+  # Records straight to 16 kHz mono PCM16, so no audio decoding step is needed.
+  record: ^7.1.1
+  # Locates app storage for the one-time model copy out of the asset bundle.
+  path_provider: ^2.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+# The HOST APP declares the model asset (this package reads it through
+# rootBundle, which resolves against the app's bundle):
+#
+# flutter:
+#   assets:
+#     - assets/models/
