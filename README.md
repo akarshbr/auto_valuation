@@ -6,9 +6,7 @@ conversion, resampling, silence trimming, inference) runs on a worker isolate, s
 UI thread is never blocked.
 
 ```dart
-final modelPath = await const WhisperModelInstaller()
-    .ensureInstalled('assets/models/ggml-tiny.en-q5_1.bin');
-final transcriber = await WhisperTranscriber.load(modelPath);
+final transcriber = await WhisperTranscriber.load(whisperModelPath);
 
 final result = await transcriber.transcribePcm16(pcmBytes, languageCode: 'en-IN');
 result.text;            // "the quick brown fox jumps over the lazy dog"
@@ -36,7 +34,8 @@ All three return a `TranscriptionResult` (`text`, `language`, `audioSeconds`,
 
 | Exception | Meaning |
 |---|---|
-| `ModelLoadException` | model file missing, corrupt, or native library not in the build |
+| `ModelNotDownloadedException` | no model file at the path yet — prompt for the download (carries `path`). A `ModelLoadException` subclass. |
+| `ModelLoadException` | model file corrupt or incomplete, or native library not in the build |
 | `AudioFormatException` | not a WAV / unsupported encoding / unreadable file / empty buffer |
 | `SilentAudioException` | decoded fine but no audible sound (muted mic) |
 | `AudioTooShortException` | under `minAudioSeconds` after trimming (carries the durations) |
@@ -96,8 +95,8 @@ See `example/lib/main.dart` for a complete screen.
 - **Lean native shim.** The C++ side collects only the transcript — no per-token text
   or probability vectors — and runs whisper without timestamp tokens, which shortens
   the decode.
-- **Model copied once.** `WhisperModelInstaller` writes a size marker next to the
-  installed model, so later launches skip loading the asset just to compare lengths.
+- **Model read in place.** The model is not bundled as an asset. whisper.cpp opens
+  the downloaded file directly, so it is never loaded into the Dart heap or copied.
 
 ## Setup
 
@@ -109,25 +108,45 @@ dependencies:
     path: ../audio_valuation
 ```
 
-**2. Get a model** (once, on your desktop)
+**2. Download the model after install**
+
+The model is **not** a Flutter asset. The app downloads it after install to
+`whisperModelPath`:
+
+```
+/storage/emulated/0/Android/data/com.orell/files/downloads/ggml-tiny.en-q5_1.bin
+```
+
+That is the app's own external storage directory, so no storage permission is
+needed. Until the file is there, `WhisperTranscriber.load` throws
+`ModelNotDownloadedException`. Catch it to offer the download:
+
+```dart
+try {
+  transcriber = await WhisperTranscriber.load(whisperModelPath);
+} on ModelNotDownloadedException catch (e) {
+  showDownloadPrompt(saveTo: e.path);
+}
+```
+
+Have the download write to a temporary name and rename it to the final path once
+it completes. An interrupted download left at the final path would pass the
+existence check and then fail as a `ModelLoadException`.
+
+To test on a device without the download flow, fetch the model on your desktop and
+push it:
 
 ```bash
 ./tools/fetch_whisper_model.sh tiny.en q5_1      # ~31 MB
-./tools/fetch_whisper_model.sh base q5_1         # ~57 MB, better accuracy
+adb push assets/models/ggml-tiny.en-q5_1.bin \
+  /storage/emulated/0/Android/data/com.orell/files/downloads/
 ```
 
 Use a multilingual model (drop the `.en`) for `hi-IN` or other languages. Pass
-`languageCode: ''` to let the model auto-detect.
+`languageCode: ''` to let the model auto-detect. A multilingual model has a different
+file name, so change `whisperModelPath` to match.
 
-**3. Declare the asset in your app** (not in this package)
-
-```yaml
-flutter:
-  assets:
-    - assets/models/
-```
-
-**4. Build whisper.cpp into your app**
+**3. Build whisper.cpp into your app**
 
 ```bash
 git clone https://github.com/ggml-org/whisper.cpp native/whisper.cpp

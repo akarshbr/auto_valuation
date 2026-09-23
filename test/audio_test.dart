@@ -245,4 +245,21 @@ void main() {
       expect(primaryLanguage('  '), 'auto');
     });
   });
+
+  group('WhisperTranscriber.load', () {
+    test('throws ModelNotDownloadedException when the model file is missing',
+        () async {
+      const missing = '/nonexistent/ggml-tiny.en-q5_1.bin';
+      await expectLater(
+        WhisperTranscriber.load(missing),
+        throwsA(isA<ModelNotDownloadedException>()
+            .having((e) => e.path, 'path', missing)),
+      );
+    });
+
+    test('ModelNotDownloadedException is still a ModelLoadException', () {
+      expect(const ModelNotDownloadedException(whisperModelPath),
+          isA<ModelLoadException>());
+    });
+  });
 }

@@ -5,9 +5,7 @@
 /// stalls.
 ///
 /// ```dart
-/// final modelPath = await const WhisperModelInstaller()
-///     .ensureInstalled('assets/models/ggml-tiny.en-q5_1.bin');
-/// final transcriber = await WhisperTranscriber.load(modelPath);
+/// final transcriber = await WhisperTranscriber.load(whisperModelPath);
 ///
 /// final result = await transcriber.transcribePcm16(await recorder.stop());
 /// print(result.text);
@@ -17,7 +15,7 @@ library audio_valuation;
 export 'src/audio_prep.dart' show PreparedAudio, prepareAudio;
 export 'src/config.dart';
 export 'src/exceptions.dart';
-export 'src/model_installer.dart';
+export 'src/model_path.dart';
 export 'src/pcm.dart'
     show WavInfo, decodeWav, parseWavHeader, pcm16Into, pcm16ToFloat32, resampleLinear;
 export 'src/recorder.dart';
