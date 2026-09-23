@@ -42,16 +42,19 @@ class WhisperTranscriber implements Transcriber {
   bool _disposed = false;
 
   /// Loads a ggml model (e.g. `ggml-tiny.en-q5_1.bin`) from a filesystem
-  /// path. Loading happens on a worker isolate, so a 30-100 MB model does not
-  /// freeze the first frame. See `WhisperModelInstaller` for copying a
-  /// Flutter asset to disk.
+  /// path - normally [whisperModelPath], where the app downloads it after
+  /// install. Loading happens on a worker isolate, so a 30-100 MB model does
+  /// not freeze the first frame.
+  ///
+  /// Throws [ModelNotDownloadedException] if there is no file at
+  /// [modelPath], before any isolate or native work is started.
   static Future<WhisperTranscriber> load(
     String modelPath, {
     TranscriptionConfig config = TranscriptionConfig.defaults,
     bool useGpu = false,
   }) async {
-    if (!await File(modelPath).exists()) {
-      throw ModelLoadException('Speech model not found at $modelPath');
+    if (!File(modelPath).existsSync()) {
+      throw ModelNotDownloadedException(modelPath);
     }
 
     final address = await _openModel(modelPath, useGpu);

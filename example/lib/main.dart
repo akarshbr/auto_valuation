@@ -44,9 +44,7 @@ class _TranscriptionScreenState extends State<TranscriptionScreen> {
 
   Future<void> _loadModel() async {
     try {
-      final modelPath = await const WhisperModelInstaller()
-          .ensureInstalled('assets/models/ggml-tiny.en-q5_1.bin');
-      final transcriber = await WhisperTranscriber.load(modelPath);
+      final transcriber = await WhisperTranscriber.load(whisperModelPath);
       if (!mounted) {
         await transcriber.dispose();
         return;
@@ -55,6 +53,10 @@ class _TranscriptionScreenState extends State<TranscriptionScreen> {
         _transcriber = transcriber;
         _status = 'Ready — running fully on device';
       });
+    } on ModelNotDownloadedException catch (error) {
+      // A real app would offer the download here (to error.path), then call
+      // _loadModel again once it completes.
+      setState(() => _status = error.message);
     } on TranscriptionException catch (error) {
       setState(() => _status = error.message);
     }

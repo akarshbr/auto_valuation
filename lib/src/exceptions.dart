@@ -15,8 +15,19 @@ sealed class TranscriptionException implements Exception {
 }
 
 /// The speech model could not be loaded.
-final class ModelLoadException extends TranscriptionException {
+base class ModelLoadException extends TranscriptionException {
   const ModelLoadException(super.message);
+}
+
+/// There is no model file at [path] yet: the post-install download has not
+/// run or has not finished. Catch this to prompt for the download instead
+/// of showing an error.
+final class ModelNotDownloadedException extends ModelLoadException {
+  const ModelNotDownloadedException(this.path)
+      : super('The speech model has not been downloaded yet');
+
+  /// Where the model is expected. The download should write the file here.
+  final String path;
 }
 
 /// The audio bytes could not be parsed (not a WAV, unsupported encoding,

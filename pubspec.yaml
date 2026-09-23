@@ -13,17 +13,11 @@ dependencies:
   ffi: ^2.1.0
   # Records straight to 16 kHz mono PCM16, so no audio decoding step is needed.
   record: ^7.1.1
-  # Locates app storage for the one-time model copy out of the asset bundle.
-  path_provider: ^2.1.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
 
-# The HOST APP declares the model asset (this package reads it through
-# rootBundle, which resolves against the app's bundle):
-#
-# flutter:
-#   assets:
-#     - assets/models/
+# The model is NOT a Flutter asset. The app downloads it after install to
+# whisperModelPath (lib/src/model_path.dart) and it is read from there.
